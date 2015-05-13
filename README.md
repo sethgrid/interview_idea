@@ -13,3 +13,12 @@ $ go run main.go
 ```
 
 You will be directed to go to a url (in the main.go log). Instructions will be there. 
+
+# Docker
+
+Start up using docker-compose
+```
+docker-compose up
+```
+
+Go to http://$DOCKER_HOST:9090
