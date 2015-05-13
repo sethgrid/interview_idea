@@ -99,7 +99,7 @@ The function can be one of the following:
 Each batch can be verified for correctness by submitting to /validate/batch/:B with a post body where each line represents the solution to the corresponding work request.
 <br>
 <pre>
-Example:
+Example (note: there are not duplicate characters in solutions):
 2
 Foo
 some-key intersection apples planes
@@ -429,6 +429,7 @@ func deduplicate(s string) string {
 	runes := make(map[rune]bool)
 	for _, r := range s {
 		if _, ok := runes[r]; !ok {
+			runes[r] = true
 			deduplicated += string(r)
 		}
 	}
