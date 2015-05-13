@@ -35,6 +35,8 @@ var MaxBatchSize int
 var DefaultBatchCount int
 var RedisAddr string
 var ShowSolutions bool
+var InstableMode bool
+var MaxLag int
 
 // populated internally
 var APIKeyPool []string
@@ -46,6 +48,9 @@ func init() {
 	flag.IntVar(&DefaultBatchCount, "batches", 10, "number of batches to generate by default (overwrite with query params)")
 	flag.StringVar(&RedisAddr, "redis", ":6379", "set host and port for redis")
 	flag.BoolVar(&ShowSolutions, "show-solutions", false, "set to see solutions")
+	flag.BoolVar(&InstableMode, "instable-mode", false, "causes endpoints to have latency and potential retryable server errors on batch verification")
+	flag.IntVar(&MaxLag, "max-lag", 3000, "max lag in milliseconds to introduce to validate endpoints, only valid with instable-mode")
+
 	setAPIKeyPool()
 }
 
@@ -89,7 +94,7 @@ The function can be one of the following:
 <br>
 %s: get the characters that appear in both strings
 <br>
-%s: concat the two strings together, remove duplicates, and preserve order
+%s: concat the two strings together and preserve order
 <br>
 %s: concat the strings and sort them (assuming American English as the guide for letter priority)
 <br>
@@ -99,16 +104,39 @@ The function can be one of the following:
 Each batch can be verified for correctness by submitting to /validate/batch/:B with a post body where each line represents the solution to the corresponding work request.
 <br>
 <pre>
-Example (note: there are not duplicate characters in solutions):
-2
-Foo
+Example (note: there are no duplicate characters in solutions):
+
+Foo 5
 some-key intersection apples planes
 some-other-key union apples planes
+invalid-key union apples planes
+some-key mangle apples planes
+some-key unionsort apples planes
 
 Solution:
 curl -X POST localhost:%d/validate/batch/Foo -d 'pes
 aplesn
+invalid
+alpnes
+adlnps
 '
+</pre>
+
+<h3>Instructions for the interviewer</h3>
+After the candidate has time to work on a solution, we can dig deeper with the following:
+<br>
+<ul>
+    <li>Let the candidate know that our api verification is slow and they will see many duplicates in the requests. How can they mitigate this?</li>
+    <li>Let the candidate know that the verification boxes are getting bogged down and are becoming slow. How can they maximize through out?</li>
+    <li>Let them know that the system is a bit unstable, and some requests are being dropped with 500 level messages. How can we mitigate this?</li>
+    <li>Assume that the input is from a very large file, what would they change? What if it is a network stream?</li>
+    <li>What logging, monitoring, and metrics would the candidate consider for their service?</li>
+    <li>Talk to the candidate about memory vs disk usage trade offs they have made. What is the big-O notation of their methods?</li>
+    <li>...</li>
+</ul>
+Also, for the interviewer, take note of the options on the interview service. You can have the
+program show solutions, add instability, increase string lengths and batch sizes. You could have two 
+services running, one simple and one complex. Your call :)
 </pre>
 </body>
 </html>
@@ -133,6 +161,13 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 
 // validate a batch of data submitted by the candidate
 func validateBatchHandler(w http.ResponseWriter, r *http.Request) {
+	if InstableMode {
+		<-time.Tick(time.Duration(rand.Intn(MaxLag)) * time.Millisecond)
+		if rand.Intn(10) == 1 {
+			handleErr(w, http.StatusInternalServerError, "please try again")
+			return
+		}
+	}
 	vars := mux.Vars(r)
 	batch, ok := vars["batch"]
 	if !ok {
@@ -203,6 +238,9 @@ func validateBatchHandler(w http.ResponseWriter, r *http.Request) {
 
 // check if the apikey is valid (lives in redis)
 func validateAPIKeyHandler(w http.ResponseWriter, r *http.Request) {
+	if InstableMode {
+		<-time.Tick(time.Duration(rand.Intn(MaxLag)) * time.Millisecond)
+	}
 	vars := mux.Vars(r)
 	key, ok := vars["key"]
 	if !ok {
