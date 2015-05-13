@@ -41,7 +41,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	log.Printf("starting on 0.0.0.0:%d", Port)
+	log.Printf("starting on 0.0.0.0:%d. Please visit url in browser for instructions.", Port)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler)
@@ -54,7 +54,56 @@ func main() {
 
 // provide sinsible information for a candidate to use this service
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(fmt.Sprintf("use http://localhost:%d/generate?count=10\n", Port)))
+	w.Write([]byte(fmt.Sprintf(`
+<html>
+<head><title>Interview</title></head>
+<body>
+
+<h1>Interview</h1>
+Curl or go to <a href="http://localhost:%d/generate?count=10">http://localhost:%d/generate?count=10</a>
+<br>
+Feel free to adjust count.
+<br><br>
+The data you see is in the form:
+<br>
+<pre>
+N
+batch B
+APIKEY FUNCTION STRING_A STRING_B
+APIKEY FUNCTION STRING_A STRING_B
+</pre>
+Where N is the number of batches and B is the name of the batch. Each work item will have an api key that must be validated at /validate/apikey/:APIKEY.
+Non valid api keys should not be allowed to request work to be processed.
+<br>
+<br>
+The function can be one of the following:
+<br>
+intersection: get the characters that appear in both strings
+<br>
+union: concat the two strings together, remove duplicates, and preserve order
+<br>
+concat_sort: concat the strings and sort them (assuming American English as the guide for letter priority)
+<br>
+mangle: take the even indexed letters from the first string and the odd indexed letters from the second string
+<br>
+<br>
+Each batch can be verified for correctness by submitting to /validate/batch/:B with a post body where each line represents the solution to the corresponding work request.
+<br>
+<pre>
+Example:
+2
+batch Foo
+some-key intersection apples planes
+some-other-key union apples planes
+
+Solution:
+curl -X POST localhost:%d/validate/batch/foo -d 'pes
+aplesn
+'
+</pre>
+</body>
+</html>
+`, Port, Port, Port)))
 }
 
 // create an input data set that the candidate will work against
@@ -239,49 +288,49 @@ func setAPIKeyPool() {
 		"aca0c41d-5a97-46e6-8a11-3872dcd3f60a",
 		"60c5be58-37db-4ace-90b5-b54e6c44527f",
 		"03ab7b0f-abdc-4991-9b8b-fa57b2e35090",
-		"ede2cf62-27a6-4122-afde-358a317935b1",
-		"f410747f-2e81-45b3-9633-733c4be61cea",
-		"a7ff9400-e609-4908-8c4d-031f418a57dc",
-		"56a0ad3c-bbfd-4f7f-b2cb-0c928d5ecc51",
-		"c38de002-15b2-4f97-a4f1-d521e9fc46a8",
-		"98958321-73de-4e85-961c-3dbbe37b78a7",
-		"8e00e59f-ee5b-45ab-a975-91f0f3d51cb7",
-		"f0f36997-da3e-47cf-9f55-bb9d56b8ed78",
-		"9e5ea1e4-ef58-4067-a5e8-c5f240044450",
-		"3a3d6269-b780-4de3-aded-33be5b45c7cc",
-		"92fc7307-823e-47cc-8302-3957ac769b8e",
-		"54df4ec7-21b5-4567-8311-24644ab54fa3",
-		"157cd7f0-f3a1-4b0e-9f13-8bf2a7fdce69",
-		"20539e8e-bdf4-4129-98b5-8328e8322c92",
-		"cd8858e2-e42b-4975-aadb-58f08c8c2534",
-		"3d84a97f-9a16-435d-b149-3b982d758201",
-		"970cca57-c69a-42ce-91a6-06e60dd6a3d8",
-		"ccb75279-6af9-4cf1-9298-e66cb6394c1e",
-		"99f2ae28-d346-43e9-825d-62e00c2128c5",
-		"af997a41-2b29-4f12-a9a2-6cac5f5bd450",
-		"0e3cb9dd-a158-47e4-9e1b-4cb26ff3d46b",
-		"437c13a0-4d1d-4664-b8a6-992ef4f12b3a",
-		"571106c8-953a-4773-8ec1-02dfa292e314",
-		"847d2125-8607-446e-996b-d2cf6ff9ac9a",
-		"1a5bd82e-5a04-421d-aca9-7294df428756",
-		"020ac153-67dc-467f-837e-ad720eb6628b",
-		"304bab5d-11fd-41b3-be0e-494515ae4d54",
-		"f772c251-a481-4ccc-bb73-6f2230b94763",
-		"12b34ba7-cae0-4696-b353-bba71b90a1a2",
-		"dc65992e-0fac-48ba-bd9c-2929db88ba10",
-		"432bcd93-66a2-4e77-bdca-9327aabb48b2",
-		"5699a2c7-b6c8-48ea-9cab-696b8e05f282",
-		"8698d6b4-e0c9-406e-9080-745ff7fb811e",
-		"cdd70e83-82cc-41f2-9927-c6d892e6200f",
-		"69f9926d-5352-4115-b87a-f273f00fe8e7",
-		"9dc7257b-c1ee-4d95-99f4-164a4d52aed0",
-		"9de92095-e32e-4039-b165-e3c4e203a553",
-		"4d487bde-d8ff-4f6c-97ce-f33d3163498f",
-		"e0ba455a-361c-49bb-a8c5-3fa92f242227",
-		"b8d69fed-cb8e-4c93-a7ea-f3a827776e71",
-		"31563061-82da-4bc6-b244-a577a6a4f6c4",
-		"0b667e50-c318-4ea4-abb5-2c0d615c5c1c",
-		"4f4f1c44-586a-4d38-8080-a18082d08bd9",
+		// "ede2cf62-27a6-4122-afde-358a317935b1",
+		// "f410747f-2e81-45b3-9633-733c4be61cea",
+		// "a7ff9400-e609-4908-8c4d-031f418a57dc",
+		// "56a0ad3c-bbfd-4f7f-b2cb-0c928d5ecc51",
+		// "c38de002-15b2-4f97-a4f1-d521e9fc46a8",
+		// "98958321-73de-4e85-961c-3dbbe37b78a7",
+		// "8e00e59f-ee5b-45ab-a975-91f0f3d51cb7",
+		// "f0f36997-da3e-47cf-9f55-bb9d56b8ed78",
+		// "9e5ea1e4-ef58-4067-a5e8-c5f240044450",
+		// "3a3d6269-b780-4de3-aded-33be5b45c7cc",
+		// "92fc7307-823e-47cc-8302-3957ac769b8e",
+		// "54df4ec7-21b5-4567-8311-24644ab54fa3",
+		// "157cd7f0-f3a1-4b0e-9f13-8bf2a7fdce69",
+		// "20539e8e-bdf4-4129-98b5-8328e8322c92",
+		// "cd8858e2-e42b-4975-aadb-58f08c8c2534",
+		// "3d84a97f-9a16-435d-b149-3b982d758201",
+		// "970cca57-c69a-42ce-91a6-06e60dd6a3d8",
+		// "ccb75279-6af9-4cf1-9298-e66cb6394c1e",
+		// "99f2ae28-d346-43e9-825d-62e00c2128c5",
+		// "af997a41-2b29-4f12-a9a2-6cac5f5bd450",
+		// "0e3cb9dd-a158-47e4-9e1b-4cb26ff3d46b",
+		// "437c13a0-4d1d-4664-b8a6-992ef4f12b3a",
+		// "571106c8-953a-4773-8ec1-02dfa292e314",
+		// "847d2125-8607-446e-996b-d2cf6ff9ac9a",
+		// "1a5bd82e-5a04-421d-aca9-7294df428756",
+		// "020ac153-67dc-467f-837e-ad720eb6628b",
+		// "304bab5d-11fd-41b3-be0e-494515ae4d54",
+		// "f772c251-a481-4ccc-bb73-6f2230b94763",
+		// "12b34ba7-cae0-4696-b353-bba71b90a1a2",
+		// "dc65992e-0fac-48ba-bd9c-2929db88ba10",
+		// "432bcd93-66a2-4e77-bdca-9327aabb48b2",
+		// "5699a2c7-b6c8-48ea-9cab-696b8e05f282",
+		// "8698d6b4-e0c9-406e-9080-745ff7fb811e",
+		// "cdd70e83-82cc-41f2-9927-c6d892e6200f",
+		// "69f9926d-5352-4115-b87a-f273f00fe8e7",
+		// "9dc7257b-c1ee-4d95-99f4-164a4d52aed0",
+		// "9de92095-e32e-4039-b165-e3c4e203a553",
+		// "4d487bde-d8ff-4f6c-97ce-f33d3163498f",
+		// "e0ba455a-361c-49bb-a8c5-3fa92f242227",
+		// "b8d69fed-cb8e-4c93-a7ea-f3a827776e71",
+		// "31563061-82da-4bc6-b244-a577a6a4f6c4",
+		// "0b667e50-c318-4ea4-abb5-2c0d615c5c1c",
+		// "4f4f1c44-586a-4d38-8080-a18082d08bd9",
 	}
 
 	conn, err := redis.Dial("tcp", RedisAddr)
@@ -361,6 +410,17 @@ func solution(thisCase string) string {
 	return "<< unexpected function: " + function + " >>"
 }
 
+func deduplicate(s string) string {
+	var deduplicated string
+	runes := make(map[rune]bool)
+	for _, r := range s {
+		if _, ok := runes[r]; !ok {
+			deduplicated += string(r)
+		}
+	}
+	return deduplicated
+}
+
 func intersection(a, b string) string {
 	var s string
 	for _, runeA := range a {
@@ -370,17 +430,17 @@ func intersection(a, b string) string {
 			}
 		}
 	}
-	return s
+	return deduplicate(s)
 }
 
 func union(a, b string) string {
-	return a + b
+	return deduplicate(a + b)
 }
 
 func concatSort(a, b string) string {
 	stringsToSort := []string{a, b}
 	collate.New(language.AmericanEnglish, collate.OptionsFromTag(language.AmericanEnglish)).SortStrings(stringsToSort)
-	return strings.Join(stringsToSort, "")
+	return deduplicate(strings.Join(stringsToSort, ""))
 }
 
 func mangle(a, b string) string {
@@ -401,7 +461,7 @@ func mangle(a, b string) string {
 		}
 		index++
 	}
-	return s
+	return deduplicate(s)
 }
 
 func genRandString() string {
