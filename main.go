@@ -415,7 +415,7 @@ func solution(thisCase string) string {
 	case Intersection:
 		return intersection(a, b)
 	case UnionSort:
-		return concatSort(a, b)
+		return unionSort(a, b)
 	case Mangle:
 		return mangle(a, b)
 	}
@@ -452,29 +452,36 @@ func union(a, b string) string {
 	return deduplicate(a + b)
 }
 
-func concatSort(a, b string) string {
-	stringsToSort := []string{a, b}
-	collate.New(language.AmericanEnglish, collate.OptionsFromTag(language.AmericanEnglish)).SortStrings(stringsToSort)
-	return deduplicate(strings.Join(stringsToSort, ""))
+func unionSort(a, b string) string {
+	j := make([]string, 0)
+	for _, aChars := range a {
+		j = append(j, string(aChars))
+	}
+	for _, bChars := range b {
+		j = append(j, string(bChars))
+	}
+
+	collate.New(language.AmericanEnglish, collate.OptionsFromTag(language.AmericanEnglish)).SortStrings(j)
+	return deduplicate(strings.Join(j, ""))
 }
 
 func mangle(a, b string) string {
 	// grab even indexed chars from a, odd from b
 	var s string
-	index := 0
-	for _, runeA := range a {
+
+	for i, runeA := range a {
 		for j, runeB := range b {
-			if j != index {
+			if j != i {
 				continue
 			}
 
-			if index%2 == 0 {
+			if i%2 == 0 {
 				s += string(runeA)
 			} else {
 				s += string(runeB)
 			}
 		}
-		index++
+
 	}
 	return deduplicate(s)
 }
