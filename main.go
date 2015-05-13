@@ -18,6 +18,14 @@ import (
 	"golang.org/x/text/language"
 )
 
+const (
+	// function types
+	Union        = "union"
+	Intersection = "intersection"
+	UnionSort    = "unionsort"
+	Mangle       = "mangle"
+)
+
 // Globals - yeah, I know
 
 // populated with flags:
@@ -26,6 +34,7 @@ var RandStringLen int
 var MaxBatchSize int
 var DefaultBatchCount int
 var RedisAddr string
+var ShowSolutions bool
 
 // populated internally
 var APIKeyPool []string
@@ -36,12 +45,13 @@ func init() {
 	flag.IntVar(&MaxBatchSize, "max-in-batch", 15, "max number of cases in each batch")
 	flag.IntVar(&DefaultBatchCount, "batches", 10, "number of batches to generate by default (overwrite with query params)")
 	flag.StringVar(&RedisAddr, "redis", ":6379", "set host and port for redis")
+	flag.BoolVar(&ShowSolutions, "show-solutions", false, "set to see solutions")
 	setAPIKeyPool()
 }
 
 func main() {
 	flag.Parse()
-	log.Printf("starting on 0.0.0.0:%d. Please visit url in browser for instructions.", Port)
+	log.Printf("starting on localhost:%d. URL has instructions.", Port)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler)
@@ -67,24 +77,23 @@ Feel free to adjust count.
 The data you see is in the form:
 <br>
 <pre>
-N
-batch B
+B C
 APIKEY FUNCTION STRING_A STRING_B
 APIKEY FUNCTION STRING_A STRING_B
 </pre>
-Where N is the number of batches and B is the name of the batch. Each work item will have an api key that must be validated at /validate/apikey/:APIKEY.
-Non valid api keys should not be allowed to request work to be processed.
+Where B is the name of the batch. C is the number of elements/work-items in this batch. Each work-item will have an api key that must be validated at /validate/apikey/:APIKEY.
+Non valid api keys should not be allowed to request work to be processed. These entries should report "invalid" as the solution.
 <br>
 <br>
 The function can be one of the following:
 <br>
-intersection: get the characters that appear in both strings
+%s: get the characters that appear in both strings
 <br>
-union: concat the two strings together, remove duplicates, and preserve order
+%s: concat the two strings together, remove duplicates, and preserve order
 <br>
-concat_sort: concat the strings and sort them (assuming American English as the guide for letter priority)
+%s: concat the strings and sort them (assuming American English as the guide for letter priority)
 <br>
-mangle: take the even indexed letters from the first string and the odd indexed letters from the second string
+%s: take the even indexed letters from the first string and the odd indexed letters from the second string
 <br>
 <br>
 Each batch can be verified for correctness by submitting to /validate/batch/:B with a post body where each line represents the solution to the corresponding work request.
@@ -92,18 +101,18 @@ Each batch can be verified for correctness by submitting to /validate/batch/:B w
 <pre>
 Example:
 2
-batch Foo
+Foo
 some-key intersection apples planes
 some-other-key union apples planes
 
 Solution:
-curl -X POST localhost:%d/validate/batch/foo -d 'pes
+curl -X POST localhost:%d/validate/batch/Foo -d 'pes
 aplesn
 '
 </pre>
 </body>
 </html>
-`, Port, Port, Port)))
+`, Port, Port, Intersection, Union, UnionSort, Mangle, Port)))
 }
 
 // create an input data set that the candidate will work against
@@ -230,25 +239,26 @@ func genInput(count int) string {
 		return "<< error >>"
 	}
 
-	s := fmt.Sprintf("%d\n", count)
+	var s string
 	for i := 1; i <= count; i++ {
 		batchName := genBatchName()
-		s += fmt.Sprintf("batch %s\n", batchName)
+		batchSize := rand.Intn(MaxBatchSize)
+		s += fmt.Sprintf("%s %d\n", batchName, batchSize)
 
-		for j := 0; j <= rand.Intn(MaxBatchSize); j++ {
+		for j := 0; j <= batchSize; j++ {
 			apiKey := genAPIKey()
 			testType := genTestType()
 			a := genRandString()
 			b := genRandString()
 			thisCase := fmt.Sprintf("%s %s %s %s", apiKey, testType, a, b)
-			s += fmt.Sprintf("%s\n", thisCase)
-
-			// don't create an api key entry in 10% of cases
-			if rand.Intn(10) == 1 {
-				continue
+			answer := solution(thisCase)
+			if ShowSolutions {
+				s += fmt.Sprintf("%s # %s\n", thisCase, answer)
+			} else {
+				s += fmt.Sprintf("%s\n", thisCase)
 			}
 
-			_, err = conn.Do("SETEX", fmt.Sprintf("%s_%d", batchName, j), int(2*time.Hour.Seconds()), solution(thisCase))
+			_, err = conn.Do("SETEX", fmt.Sprintf("%s_%d", batchName, j), int(2*time.Hour.Seconds()), answer)
 			if err != nil {
 				log.Printf("unable to set solution with expiration (%s) - %s", thisCase, err.Error())
 			}
@@ -334,7 +344,9 @@ func setAPIKeyPool() {
 	}
 
 	conn, err := redis.Dial("tcp", RedisAddr)
-
+	if err != nil {
+		log.Fatalf("unable to dial redis - %s", err)
+	}
 	for _, apiKey := range APIKeyPool {
 		_, err = conn.Do("SETEX", apiKey, int(2*time.Hour.Seconds()), true)
 		if err != nil {
@@ -358,13 +370,13 @@ func genTestType() string {
 	r := rand.Intn(4)
 	switch r {
 	case 0:
-		return "union"
+		return Union
 	case 1:
-		return "intersection"
+		return Intersection
 	case 2:
-		return "concat_sort"
+		return UnionSort
 	case 3:
-		return "mangle"
+		return Mangle
 	}
 
 	log.Println("error - incorrect test type generated")
@@ -376,6 +388,7 @@ func solution(thisCase string) string {
 	// check that the api key is in redis, if not, set response to "invalid"
 	parts := strings.Split(thisCase, " ")
 	if len(parts) != 4 {
+		log.Printf("error - solution(%s): not four parts", thisCase)
 		return "<< error parsing data, not four parts: " + thisCase + " >>"
 	}
 
@@ -397,16 +410,17 @@ func solution(thisCase string) string {
 	}
 
 	switch function {
-	case "union":
+	case Union:
 		return union(a, b)
-	case "intersection":
+	case Intersection:
 		return intersection(a, b)
-	case "concat_sort":
+	case UnionSort:
 		return concatSort(a, b)
-	case "mangle":
+	case Mangle:
 		return mangle(a, b)
 	}
 
+	log.Println("error - unexpected function ", function)
 	return "<< unexpected function: " + function + " >>"
 }
 
