@@ -51,11 +51,12 @@ func init() {
 	flag.BoolVar(&InstableMode, "instable-mode", false, "causes endpoints to have latency and potential retryable server errors on batch verification")
 	flag.IntVar(&MaxLag, "max-lag", 3000, "max lag in milliseconds to introduce to validate endpoints, only valid with instable-mode")
 
+	flag.Parse()
+
 	setAPIKeyPool()
 }
 
 func main() {
-	flag.Parse()
 	log.Printf("starting on localhost:%d. URL has instructions.", Port)
 
 	r := mux.NewRouter()
@@ -75,7 +76,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 <body>
 
 <h1>Interview</h1>
-Curl or go to <a href="http://localhost:%d/generate?count=10">http://localhost:%d/generate?count=10</a>
+Curl or go to <a href="http://%s/generate?count=10">http://%s/generate?count=10</a>
 <br>
 Feel free to adjust count.
 <br><br>
@@ -114,7 +115,7 @@ some-key mangle apples planes
 some-key unionsort apples planes
 
 Solution:
-curl -X POST localhost:%d/validate/batch/Foo -d 'pes
+curl -X POST %s/validate/batch/Foo -d 'pes
 aplesn
 invalid
 alpnes
@@ -140,7 +141,7 @@ services running, one simple and one complex. Your call :)
 </pre>
 </body>
 </html>
-`, Port, Port, Intersection, Union, UnionSort, Mangle, Port)))
+`, r.Host, r.Host, Intersection, Union, UnionSort, Mangle, r.Host)))
 }
 
 // create an input data set that the candidate will work against
