@@ -92,13 +92,13 @@ Non valid api keys should not be allowed to request work to be processed. These 
 <br>
 The function can be one of the following:
 <br>
-%s: get the characters that appear in both strings
+%s: get the characters that appear in both strings and drop duplicates
 <br>
-%s: concat the two strings together and preserve order
+%s: concat the two strings together and preserve order and drop duplicates
 <br>
-%s: concat the strings and sort them (assuming American English as the guide for letter priority)
+%s: concat the strings and sort them (assuming American English as the guide for letter priority) and drop duplicates
 <br>
-%s: take the even indexed letters from the first string and the odd indexed letters from the second string
+%s: take the even indexed letters from the first string and the odd indexed letters from the second string and drop duplicates
 <br>
 <br>
 Each batch can be verified for correctness by submitting to /validate/batch/:B with a post body where each line represents the solution to the corresponding work request.
@@ -281,7 +281,7 @@ func genInput(count int) string {
 	for i := 1; i <= count; i++ {
 		batchName := genBatchName()
 		batchSize := rand.Intn(MaxBatchSize)
-		s += fmt.Sprintf("%s %d\n", batchName, batchSize)
+		s += fmt.Sprintf("%s %d\n", batchName, batchSize+1)
 
 		for j := 0; j <= batchSize; j++ {
 			apiKey := genAPIKey()
