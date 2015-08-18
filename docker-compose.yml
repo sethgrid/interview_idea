@@ -1,0 +1,10 @@
+redis:
+  image: redis:2.6
+
+interview:
+  build: .
+  links:
+    - redis
+  command: -redis redis:6379
+  ports:
+    - 9090:9090
