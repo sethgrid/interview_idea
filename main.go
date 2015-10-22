@@ -75,6 +75,13 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 <body>
 
 <h1>Interview</h1>
+
+<h3>Lite Version</h3>
+Similar to the Full Version below, instead, we only need to grab the initial data and then validate the keys.
+We want to keep a running total of the invalid and valid keys.
+
+
+<h3>Full Version</h3>
 Curl or go to <a href="http://localhost:%d/generate?count=10">http://localhost:%d/generate?count=10</a>
 <br>
 Feel free to adjust count.
@@ -86,8 +93,12 @@ B C
 APIKEY FUNCTION STRING_A STRING_B
 APIKEY FUNCTION STRING_A STRING_B
 </pre>
-Where B is the name of the batch. C is the number of elements/work-items in this batch. Each work-item will have an api key that must be validated at /validate/apikey/:APIKEY.
-Non valid api keys should not be allowed to request work to be processed. These entries should report "invalid" as the solution.
+Where B is the name of the batch.
+C is the number of elements/work-items in this batch.
+Each work-item will have an api key that must be validated at /validate/apikey/:APIKEY.
+(This is where the lite version stops)
+Non valid api keys should not be allowed to request work to be processed.
+These entries should report "invalid" as the solution.
 <br>
 <br>
 The function can be one of the following:
@@ -122,22 +133,7 @@ adlnps
 '
 </pre>
 
-<h3>Instructions for the interviewer</h3>
-After the candidate has time to work on a solution, we can dig deeper with the following:
-<br>
-<ul>
-    <li>Let the candidate know that our api verification is slow and they will see many duplicates in the requests. How can they mitigate this?</li>
-    <li>Let the candidate know that the verification boxes are getting bogged down and are becoming slow. How can they maximize through out?</li>
-    <li>Let them know that the system is a bit unstable, and some requests are being dropped with 500 level messages. How can we mitigate this?</li>
-    <li>Assume that the input is from a very large file, what would they change? What if it is a network stream?</li>
-    <li>What logging, monitoring, and metrics would the candidate consider for their service?</li>
-    <li>Talk to the candidate about memory vs disk usage trade offs they have made. What is the big-O notation of their methods?</li>
-    <li>...</li>
-</ul>
-Also, for the interviewer, take note of the options on the interview service. You can have the
-program show solutions, add instability, increase string lengths and batch sizes. You could have two 
-services running, one simple and one complex. Your call :)
-</pre>
+
 </body>
 </html>
 `, Port, Port, Intersection, Union, UnionSort, Mangle, Port)))
